@@ -1,5 +1,7 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
+from .utils import retrieve_policy_chunks
+
 
 from .database import Base, engine, get_db
 from . import models
@@ -90,3 +92,20 @@ def get_policy_chunks(db: Session = Depends(get_db)):
         }
         for chunk in chunks
     ]
+@app.get("/expense-items/{item_id}/policy-match")
+def get_policy_match(item_id: int, db: Session = Depends(get_db)):
+    item = db.query(models.ExpenseItem).filter(models.ExpenseItem.id == item_id).first()
+
+    if not item:
+        return {"error": "Expense item not found"}
+
+    query_text = f"{item.category or ''} {item.merchant or ''} {item.raw_text or ''}"
+    matches = retrieve_policy_chunks(query_text, top_k=3)
+
+    return {
+        "expense_item_id": item.id,
+        "file_name": item.file_name,
+        "category": item.category,
+        "merchant": item.merchant,
+        "policy_matches": matches
+    }

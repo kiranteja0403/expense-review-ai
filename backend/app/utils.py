@@ -77,3 +77,49 @@ def extract_date(raw_text: str) -> str:
             return match.group(1)
 
     return None
+import json
+import faiss
+import numpy as np
+from sentence_transformers import SentenceTransformer
+from backend.app.database import SessionLocal
+from backend.app.models import PolicyChunk
+
+INDEX_PATH = "backend/data/policy_index.faiss"
+META_PATH = "backend/data/policy_index_meta.json"
+
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+
+
+def retrieve_policy_chunks(query_text: str, top_k: int = 3):
+    if not query_text:
+        return []
+
+    index = faiss.read_index(INDEX_PATH)
+
+    with open(META_PATH, "r", encoding="utf-8") as f:
+        meta = json.load(f)
+
+    chunk_ids = meta["chunk_ids"]
+
+    query_embedding = embedding_model.encode([query_text])
+    query_embedding = np.array(query_embedding).astype("float32")
+
+    distances, indices = index.search(query_embedding, top_k)
+
+    db = SessionLocal()
+    results = []
+
+    for idx in indices[0]:
+        if idx < len(chunk_ids):
+            chunk_id = chunk_ids[idx]
+            chunk = db.query(PolicyChunk).filter(PolicyChunk.id == chunk_id).first()
+            if chunk:
+                results.append({
+                    "id": chunk.id,
+                    "document_name": chunk.document_name,
+                    "section": chunk.section,
+                    "chunk_text": chunk.chunk_text
+                })
+
+    db.close()
+    return results
