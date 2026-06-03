@@ -17,9 +17,25 @@ def extract_merchant(raw_text: str, category: str = None) -> str:
         return None
 
     if category == "air_travel":
-        for line in lines[:5]:
+        for line in lines[:10]:
             if "united" in line.lower():
                 return "United Airlines"
+
+    if category == "lodging":
+        for line in lines[:10]:
+            if "marriott" in line.lower():
+                return line
+
+    if category == "ground_transport":
+        for line in lines[:10]:
+            if "uber" in line.lower():
+                return "Uber"
+
+    if category == "meal":
+        for line in lines[:10]:
+            lower = line.lower()
+            if any(word in lower for word in ["mercantile", "snooze", "sushiden", "avanti"]):
+                return line
 
     return lines[0]
 
@@ -27,6 +43,7 @@ def extract_merchant(raw_text: str, category: str = None) -> str:
 def extract_amount(raw_text: str) -> float:
     patterns = [
         r"Total Charged\s*\$?([0-9,]+\.[0-9]{2})",
+        r"Total charged\s*\$?([0-9,]+\.[0-9]{2})",
         r"TOTAL\s*\$?([0-9,]+\.[0-9]{2})",
         r"Total\s*\$?([0-9,]+\.[0-9]{2})",
         r"Amount\s*\$?([0-9,]+\.[0-9]{2})",
@@ -51,6 +68,7 @@ def extract_date(raw_text: str) -> str:
         r"Posted Date:\s*([0-9]{4}-[0-9]{2}-[0-9]{2})",
         r"Check-In:\s*([0-9]{4}-[0-9]{2}-[0-9]{2})",
         r"Date:\s*([0-9]{4}-[0-9]{2}-[0-9]{2})",
+        r"([0-9]{4}-[0-9]{2}-[0-9]{2})",
     ]
 
     for pattern in patterns:
