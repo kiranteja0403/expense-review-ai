@@ -61,3 +61,20 @@ def get_expense_items(db: Session = Depends(get_db)):
         }
         for item in items
     ]
+@app.get("/expense-items/{item_id}")
+def get_expense_item(item_id: int, db: Session = Depends(get_db)):
+    item = db.query(models.ExpenseItem).filter(models.ExpenseItem.id == item_id).first()
+
+    if not item:
+        return {"error": "Expense item not found"}
+
+    return {
+        "id": item.id,
+        "submission_id": item.submission_id,
+        "file_name": item.file_name,
+        "category": item.category,
+        "merchant": item.merchant,
+        "amount": item.amount,
+        "date": item.date,
+        "raw_text": item.raw_text,
+    }
