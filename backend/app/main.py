@@ -1,3 +1,4 @@
+import json
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from .utils import retrieve_policy_chunks
@@ -109,3 +110,18 @@ def get_policy_match(item_id: int, db: Session = Depends(get_db)):
         "merchant": item.merchant,
         "policy_matches": matches
     }
+@app.get("/reviews")
+def get_reviews(db: Session = Depends(get_db)):
+    reviews = db.query(models.ReviewResult).all()
+    return [
+        {
+            "id": r.id,
+            "expense_item_id": r.expense_item_id,
+            "verdict": r.verdict,
+            "reasoning": r.reasoning,
+            "confidence": r.confidence,
+            "citations": json.loads(r.citations_json) if r.citations_json else [],
+            "needs_human_review": r.needs_human_review,
+        }
+        for r in reviews
+    ]
