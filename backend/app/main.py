@@ -193,3 +193,69 @@ def get_overrides(item_id: int, db: Session = Depends(get_db)):
         }
         for o in overrides
     ]
+@app.get("/submissions/{submission_id}/detail")
+def get_submission_detail(submission_id: int, db: Session = Depends(get_db)):
+    submission = db.query(models.Submission).filter(models.Submission.id == submission_id).first()
+
+    if not submission:
+        return {"error": "Submission not found"}
+
+    trip = db.query(models.Trip).filter(models.Trip.id == submission.trip_id).first()
+    employee = db.query(models.Employee).filter(models.Employee.id == trip.employee_id).first() if trip else None
+
+    items = db.query(models.ExpenseItem).filter(models.ExpenseItem.submission_id == submission.id).all()
+
+    result_items = []
+    for item in items:
+        review = db.query(models.ReviewResult).filter(
+            models.ReviewResult.expense_item_id == item.id
+        ).first()
+
+        overrides = db.query(models.Override).filter(
+            models.Override.expense_item_id == item.id
+        ).all()
+
+        result_items.append({
+            "expense_item_id": item.id,
+            "file_name": item.file_name,
+            "category": item.category,
+            "merchant": item.merchant,
+            "amount": item.amount,
+            "date": item.date,
+            "review": {
+                "verdict": review.verdict if review else None,
+                "reasoning": review.reasoning if review else None,
+                "confidence": review.confidence if review else None,
+                "needs_human_review": review.needs_human_review if review else None,
+                "citations": json.loads(review.citations_json) if review and review.citations_json else []
+            } if review else None,
+            "overrides": [
+                {
+                    "id": o.id,
+                    "final_verdict": o.final_verdict,
+                    "reviewer_comment": o.reviewer_comment,
+                    "created_at": o.created_at,
+                }
+                for o in overrides
+            ]
+        })
+
+    return {
+        "submission_id": submission.id,
+        "folder_name": submission.folder_name,
+        "status": submission.status,
+        "employee": {
+            "employee_id": employee.employee_id if employee else None,
+            "name": employee.name if employee else None,
+            "grade": employee.grade if employee else None,
+            "title": employee.title if employee else None,
+            "department": employee.department if employee else None,
+            "home_base": employee.home_base if employee else None,
+        },
+        "trip": {
+            "trip_purpose": trip.trip_purpose if trip else None,
+            "start_date": trip.start_date if trip else None,
+            "end_date": trip.end_date if trip else None,
+        },
+        "expense_items": result_items
+    }
