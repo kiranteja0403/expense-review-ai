@@ -78,3 +78,15 @@ def get_expense_item(item_id: int, db: Session = Depends(get_db)):
         "date": item.date,
         "raw_text": item.raw_text,
     }
+@app.get("/policy-chunks")
+def get_policy_chunks(db: Session = Depends(get_db)):
+    chunks = db.query(models.PolicyChunk).all()
+    return [
+        {
+            "id": chunk.id,
+            "document_name": chunk.document_name,
+            "section": chunk.section,
+            "chunk_preview": chunk.chunk_text[:200]
+        }
+        for chunk in chunks
+    ]
