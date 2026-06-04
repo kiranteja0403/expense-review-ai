@@ -1,19 +1,29 @@
 import json
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
-from .utils import retrieve_policy_chunks
 from datetime import datetime
-from .utils import retrieve_policy_chunks
 
-
-
+from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db
 from . import models
+from .utils import retrieve_policy_chunks, is_policy_question_out_of_scope
+
+
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Expense Review AI")
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 
 @app.get("/")

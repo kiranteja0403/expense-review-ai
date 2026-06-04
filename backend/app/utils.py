@@ -5,8 +5,9 @@ import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-from backend.app.database import SessionLocal
-from backend.app.models import PolicyChunk
+from .database import SessionLocal
+from .models import PolicyChunk
+
 
 
 INDEX_PATH = "backend/data/policy_index.faiss"

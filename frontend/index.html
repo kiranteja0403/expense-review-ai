@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense Review AI</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: #f4f6f8;
+      color: #222;
+    }
+    h1, h2, h3 {
+      margin-top: 0;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    input, button {
+      padding: 10px;
+      font-size: 14px;
+      margin-right: 8px;
+      margin-top: 8px;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    input {
+      min-width: 280px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .item {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      background: #fafafa;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      background: #f8fafc;
+      padding: 12px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Expense Review AI</h1>
+  <p>Minimal frontend for submission history, submission detail, and policy Q&A.</p>
+
+  <div class="card">
+    <h2>Submission History</h2>
+    <button onclick="loadHistory()">Load History</button>
+    <div id="history"></div>
+  </div>
+
+  <div class="card">
+    <h2>Submission Detail</h2>
+    <input id="submissionId" placeholder="Enter submission ID, e.g. 11" />
+    <button onclick="loadSubmissionDetail()">Load Submission</button>
+    <div id="submissionDetail"></div>
+  </div>
+
+  <div class="card">
+    <h2>Policy Q&A</h2>
+    <input id="policyQuestion" placeholder="Ask a policy question" />
+    <button onclick="askPolicyQuestion()">Ask</button>
+    <div id="policyQa"></div>
+  </div>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:8000";
+
+    async function loadHistory() {
+      const container = document.getElementById("history");
+      container.innerHTML = "Loading...";
+
+      try {
+        const res = await fetch(`${API_BASE}/history`);
+        const data = await res.json();
+
+        if (!Array.isArray(data)) {
+          container.innerHTML = "<pre>Unexpected response</pre>";
+          return;
+        }
+
+        let html = `
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Folder</th>
+                <th>Employee</th>
+                <th>Status</th>
+                <th>Trip Purpose</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Items</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        for (const item of data) {
+          html += `
+            <tr>
+              <td>${item.submission_id ?? ""}</td>
+              <td>${item.folder_name ?? ""}</td>
+              <td>${item.employee_name ?? ""}</td>
+              <td>${item.status ?? ""}</td>
+              <td>${item.trip_purpose ?? ""}</td>
+              <td>${item.start_date ?? ""}</td>
+              <td>${item.end_date ?? ""}</td>
+              <td>${item.expense_item_count ?? ""}</td>
+            </tr>
+          `;
+        }
+
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = `<pre>Failed to load history: ${err}</pre>`;
+      }
+    }
+
+    async function loadSubmissionDetail() {
+      const submissionId = document.getElementById("submissionId").value.trim();
+      const container = document.getElementById("submissionDetail");
+
+      if (!submissionId) {
+        container.innerHTML = "Please enter a submission ID.";
+        return;
+      }
+
+      container.innerHTML = "Loading...";
+
+      try {
+        const res = await fetch(`${API_BASE}/submissions/${submissionId}/detail`);
+        const data = await res.json();
+
+        if (data.error) {
+          container.innerHTML = `<pre>${data.error}</pre>`;
+          return;
+        }
+
+        let html = `
+          <p><strong>Folder:</strong> ${data.folder_name ?? ""}</p>
+          <p><strong>Status:</strong> ${data.status ?? ""}</p>
+
+          <h3>Employee</h3>
+          <p>${data.employee?.name ?? ""} (${data.employee?.employee_id ?? ""})</p>
+          <p>${data.employee?.title ?? ""} - ${data.employee?.department ?? ""}</p>
+
+          <h3>Trip</h3>
+          <p><strong>Purpose:</strong> ${data.trip?.trip_purpose ?? ""}</p>
+          <p><strong>Dates:</strong> ${data.trip?.start_date ?? ""} to ${data.trip?.end_date ?? ""}</p>
+
+          <h3>Expense Items</h3>
+        `;
+
+        for (const item of data.expense_items || []) {
+          html += `
+            <div class="item">
+              <p><strong>File:</strong> ${item.file_name ?? ""}</p>
+              <p><strong>Category:</strong> ${item.category ?? ""}</p>
+              <p><strong>Merchant:</strong> ${item.merchant ?? ""}</p>
+              <p><strong>Amount:</strong> ${item.amount ?? ""}</p>
+              <p><strong>Date:</strong> ${item.date ?? ""}</p>
+          `;
+
+          if (item.review) {
+            html += `
+              <p><strong>Verdict:</strong> ${item.review.verdict ?? ""}</p>
+              <p><strong>Reasoning:</strong> ${item.review.reasoning ?? ""}</p>
+              <p><strong>Confidence:</strong> ${item.review.confidence ?? ""}</p>
+              <p><strong>Needs human review:</strong> ${item.review.needs_human_review}</p>
+              <details>
+                <summary>View Citations</summary>
+                <pre>${JSON.stringify(item.review.citations || [], null, 2)}</pre>
+              </details>
+            `;
+          }
+
+          if (item.overrides && item.overrides.length > 0) {
+            html += `
+              <details>
+                <summary>View Overrides</summary>
+                <pre>${JSON.stringify(item.overrides, null, 2)}</pre>
+              </details>
+            `;
+          }
+
+          html += `</div>`;
+        }
+
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = `<pre>Failed to load submission detail: ${err}</pre>`;
+      }
+    }
+
+    async function askPolicyQuestion() {
+      const question = document.getElementById("policyQuestion").value.trim();
+      const container = document.getElementById("policyQa");
+
+      if (!question) {
+        container.innerHTML = "Please enter a question.";
+        return;
+      }
+
+      container.innerHTML = "Loading...";
+
+      try {
+        const res = await fetch(`${API_BASE}/policy-qa?question=${encodeURIComponent(question)}`);
+        const data = await res.json();
+
+        container.innerHTML = `
+          <p><strong>Answer:</strong> ${data.answer ?? ""}</p>
+          <h3>Citations</h3>
+          <pre>${JSON.stringify(data.citations || [], null, 2)}</pre>
+        `;
+      } catch (err) {
+        container.innerHTML = `<pre>Failed to get policy answer: ${err}</pre>`;
+      }
+    }
+  </script>
+</body>
+</html>
