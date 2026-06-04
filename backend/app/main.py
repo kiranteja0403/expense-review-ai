@@ -3,6 +3,8 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from .utils import retrieve_policy_chunks
 from datetime import datetime
+from .utils import retrieve_policy_chunks
+
 
 
 
@@ -258,4 +260,30 @@ def get_submission_detail(submission_id: int, db: Session = Depends(get_db)):
             "end_date": trip.end_date if trip else None,
         },
         "expense_items": result_items
+    }
+@app.get("/policy-qa")
+def policy_qa(question: str, db: Session = Depends(get_db)):
+    matches = retrieve_policy_chunks(question, top_k=3)
+
+    if not matches:
+        return {
+            "question": question,
+            "answer": "I don't know based on the provided policy documents.",
+            "citations": []
+        }
+
+    answer = "Based on the retrieved policy text, the most relevant guidance is shown in the cited policy chunks."
+    citations = [
+        {
+            "document_name": m["document_name"],
+            "section": m["section"],
+            "quote": m["chunk_text"][:300]
+        }
+        for m in matches
+    ]
+
+    return {
+        "question": question,
+        "answer": answer,
+        "citations": citations
     }
