@@ -57,3 +57,4 @@ backend/
   requirements.txt
 frontend/
 README.md
+Note: if demo data is reseeded multiple times during development, duplicate submission rows may appear in history. Deleting `expense_review.db` and rerunning setup scripts resets local demo state.
