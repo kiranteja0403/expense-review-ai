@@ -1,11 +1,12 @@
 {
-  "total_reviews": 34,
+  "total_reviews": 68,
   "verdict_counts": {
-    "compliant": 28,
-    "ambiguous": 4,
-    "likely_violation": 2
+    "likely_violation": 8,
+    "compliant": 53,
+    "ambiguous": 7
   },
   "citation_nonempty_rate": 1.0,
+  "citation_validity_rate": 1.0,
   "qa_eval": [
     {
       "question": "Are alcoholic drinks reimbursable during travel?",

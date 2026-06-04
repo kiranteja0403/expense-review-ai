@@ -138,4 +138,8 @@ def is_policy_question_out_of_scope(question: str) -> bool:
     ]
 
     return not any(keyword in question_lower for keyword in policy_keywords)
+def validate_citation_quote(quote: str, chunk_text: str) -> bool:
+    if not quote or not chunk_text:
+        return False
+    return quote.strip() in chunk_text
 

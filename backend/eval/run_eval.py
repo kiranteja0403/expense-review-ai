@@ -5,8 +5,12 @@ import json
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from backend.app.database import SessionLocal
-from backend.app.models import ExpenseItem, ReviewResult
-from backend.app.utils import retrieve_policy_chunks, is_policy_question_out_of_scope
+from backend.app.models import ReviewResult
+from backend.app.utils import (
+    retrieve_policy_chunks,
+    is_policy_question_out_of_scope,
+    validate_citation_quote,
+)
 
 
 def run_eval():
@@ -17,6 +21,8 @@ def run_eval():
 
     verdict_counts = {}
     citation_nonempty = 0
+    citation_valid = 0
+    citation_total = 0
 
     for review in reviews:
         verdict_counts[review.verdict] = verdict_counts.get(review.verdict, 0) + 1
@@ -24,6 +30,12 @@ def run_eval():
         citations = json.loads(review.citations_json) if review.citations_json else []
         if len(citations) > 0:
             citation_nonempty += 1
+
+        for citation in citations:
+            citation_total += 1
+            quote = citation.get("quote", "")
+            if quote:
+                citation_valid += 1
 
     sample_questions = [
         "Are alcoholic drinks reimbursable during travel?",
@@ -53,6 +65,9 @@ def run_eval():
         "verdict_counts": verdict_counts,
         "citation_nonempty_rate": (
             citation_nonempty / total_reviews if total_reviews > 0 else 0
+        ),
+        "citation_validity_rate": (
+            citation_valid / citation_total if citation_total > 0 else 0
         ),
         "qa_eval": qa_results,
         "refusal_count": refusal_count
