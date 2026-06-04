@@ -1,5 +1,18 @@
 import re
-import fitz  # PyMuPDF
+import json
+import fitz
+import faiss
+import numpy as np
+from sentence_transformers import SentenceTransformer
+
+from backend.app.database import SessionLocal
+from backend.app.models import PolicyChunk
+
+
+INDEX_PATH = "backend/data/policy_index.faiss"
+META_PATH = "backend/data/policy_index_meta.json"
+
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
 def extract_text_from_pdf(pdf_path: str) -> str:
@@ -77,17 +90,6 @@ def extract_date(raw_text: str) -> str:
             return match.group(1)
 
     return None
-import json
-import faiss
-import numpy as np
-from sentence_transformers import SentenceTransformer
-from backend.app.database import SessionLocal
-from backend.app.models import PolicyChunk
-
-INDEX_PATH = "backend/data/policy_index.faiss"
-META_PATH = "backend/data/policy_index_meta.json"
-
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
 def retrieve_policy_chunks(query_text: str, top_k: int = 3):
@@ -123,3 +125,17 @@ def retrieve_policy_chunks(query_text: str, top_k: int = 3):
 
     db.close()
     return results
+
+
+def is_policy_question_out_of_scope(question: str) -> bool:
+    question_lower = question.lower()
+
+    policy_keywords = [
+        "travel", "expense", "reimburse", "reimbursement", "receipt",
+        "meal", "hotel", "lodging", "flight", "airfare", "uber",
+        "taxi", "ground transport", "international travel", "policy",
+        "employee grade", "alcohol", "per diem"
+    ]
+
+    return not any(keyword in question_lower for keyword in policy_keywords)
+

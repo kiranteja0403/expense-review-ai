@@ -1,0 +1,32 @@
+{
+  "total_reviews": 34,
+  "verdict_counts": {
+    "compliant": 28,
+    "ambiguous": 4,
+    "likely_violation": 2
+  },
+  "citation_nonempty_rate": 1.0,
+  "qa_eval": [
+    {
+      "question": "Are alcoholic drinks reimbursable during travel?",
+      "out_of_scope": false,
+      "retrieved_chunks": 3
+    },
+    {
+      "question": "Is economy class expected for airfare?",
+      "out_of_scope": false,
+      "retrieved_chunks": 3
+    },
+    {
+      "question": "Can hotel expenses be reimbursed?",
+      "out_of_scope": false,
+      "retrieved_chunks": 3
+    },
+    {
+      "question": "Who won the world cup in 2011?",
+      "out_of_scope": true,
+      "retrieved_chunks": 0
+    }
+  ],
+  "refusal_count": 1
+}

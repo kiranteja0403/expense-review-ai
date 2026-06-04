@@ -287,3 +287,25 @@ def policy_qa(question: str, db: Session = Depends(get_db)):
         "answer": answer,
         "citations": citations
     }
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "message": "Expense Review AI backend is healthy"
+    }
+
+
+@app.get("/submissions/by-folder/{folder_name}")
+def get_submission_by_folder(folder_name: str, db: Session = Depends(get_db)):
+    submission = db.query(models.Submission).filter(
+        models.Submission.folder_name == folder_name
+    ).first()
+
+    if not submission:
+        return {"error": "Submission not found"}
+
+    return {
+        "submission_id": submission.id,
+        "folder_name": submission.folder_name,
+        "status": submission.status
+    }
