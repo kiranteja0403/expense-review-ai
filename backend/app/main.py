@@ -309,3 +309,28 @@ def get_submission_by_folder(folder_name: str, db: Session = Depends(get_db)):
         "folder_name": submission.folder_name,
         "status": submission.status
     }
+@app.get("/history")
+def get_history(db: Session = Depends(get_db)):
+    submissions = db.query(models.Submission).all()
+    results = []
+
+    for submission in submissions:
+        trip = db.query(models.Trip).filter(models.Trip.id == submission.trip_id).first()
+        employee = db.query(models.Employee).filter(models.Employee.id == trip.employee_id).first() if trip else None
+        item_count = db.query(models.ExpenseItem).filter(
+            models.ExpenseItem.submission_id == submission.id
+        ).count()
+
+        results.append({
+            "submission_id": submission.id,
+            "folder_name": submission.folder_name,
+            "status": submission.status,
+            "employee_name": employee.name if employee else None,
+            "employee_id": employee.employee_id if employee else None,
+            "trip_purpose": trip.trip_purpose if trip else None,
+            "start_date": trip.start_date if trip else None,
+            "end_date": trip.end_date if trip else None,
+            "expense_item_count": item_count
+        })
+
+    return results
